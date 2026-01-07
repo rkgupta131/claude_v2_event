@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test Page</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { 
+      background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+    .section { 
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h2 { color: #00d4ff; margin-bottom: 15px; font-size: 18px; }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    button {
+      background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .output {
+      background: #0f0f1a;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .progress-step { 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 4px 0;
+    }
+    .progress-step.pending { background: rgba(160, 174, 192, 0.1); color: #718096; }
+    .progress-step.in_progress { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+    .progress-step.completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .message { 
+      background: rgba(124, 58, 237, 0.1);
+      border-left: 3px solid #7c3aed;
+      padding: 8px 12px;
+      margin: 5px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #16213e;
+      border-radius: 6px;
+      margin: 4px 0;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .file-item.editing { border-left: 3px solid #00d4ff; }
+    .file-item.complete { border-left: 3px solid #10b981; }
+    .success-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border: 1px solid #10b981;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .error-box {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      border-radius: 12px;
+      padding: 20px;
+      color: #ef4444;
+    }
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab {
+      padding: 8px 16px;
+      background: #16213e;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .tab.active { border-color: #00d4ff; color: #00d4ff; }
+    .hidden { display: none; }
+    #status-indicator {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    .status-idle { background: #2d3748; }
+    .status-thinking { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .status-generating { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+    .status-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .status-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 AI Website Generator - API Test</h1>
+    
+    <div class="section">
+      <h2>API Configuration</h2>
+      <input type="text" id="api-url" value="http://localhost:8000" placeholder="API Base URL">
+      <button onclick="testConnection()">🔗 Test Connection</button>
+      <span id="connection-status"></span>
+    </div>
+
+    <div class="section">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('generate')">🏗️ Generate</div>
+        <div class="tab" onclick="switchTab('modify')">✏️ Modify</div>
+        <div class="tab" onclick="switchTab('chat')">💬 Chat</div>
+        <div class="tab" onclick="switchTab('projects')">📁 Projects</div>
+      </div>
+
+      <!-- Generate Tab -->
+      <div id="tab-generate" class="tab-content">
+        <textarea id="prompt" placeholder="Describe the website you want to create...&#10;&#10;Example: Create a landing page for a coffee shop called 'Bean Dreams' with modern dark theme, hero section, about us, and contact form"></textarea>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="text" id="business-name" placeholder="Business Name (optional)" style="flex: 1;">
+          <select id="website-type" style="flex: 1;">
+            <option value="">Website Type (optional)</option>
+            <option value="Landing Page">Landing Page</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="Portfolio">Portfolio</option>
+            <option value="Blog">Blog</option>
+            <option value="Corporate">Corporate</option>
+          </select>
+        </div>
+        <button onclick="generateWebsite()" id="generate-btn">🚀 Generate Website</button>
+        <span id="status-indicator" class="status-idle">Ready</span>
+      </div>
+
+      <!-- Modify Tab -->
+      <div id="tab-modify" class="tab-content hidden">
+        <input type="text" id="modify-project-id" placeholder="Project ID (leave empty for latest)">
+        <textarea id="modify-prompt" placeholder="Describe the changes you want...&#10;&#10;Example: Change the hero section background to blue and add a testimonials section"></textarea>
+        <button onclick="modifyProject()">✏️ Modify Project</button>
+      </div>
+
+      <!-- Chat Tab -->
+      <div id="tab-chat" class="tab-content hidden">
+        <textarea id="chat-message" placeholder="Ask a question...&#10;&#10;Example: What kind of websites can you create?"></textarea>
+        <button onclick="sendChat()">💬 Send</button>
+        <div id="chat-response" class="output hidden"></div>
+      </div>
+
+      <!-- Projects Tab -->
+      <div id="tab-projects" class="tab-content hidden">
+        <button onclick="listProjects()">📋 List All Projects</button>
+        <button onclick="getLatestProject()">🕐 Get Latest</button>
+        <div id="projects-list" class="output hidden"></div>
+      </div>
+    </div>
+
+    <!-- Progress & Output Section -->
+    <div id="progress-section" class="section hidden">
+      <h2>📊 Progress</h2>
+      <div id="progress-steps"></div>
+    </div>
+
+    <div id="messages-section" class="section hidden">
+      <h2>💬 Activity</h2>
+      <div id="messages"></div>
+    </div>
+
+    <div id="files-section" class="section hidden">
+      <h2>📄 Files</h2>
+      <div id="files-list"></div>
+    </div>
+
+    <div id="result-section" class="section hidden"></div>
+
+    <div class="section">
+      <h2>📜 Raw Event Log</h2>
+      <div id="event-log" class="output" style="max-height: 200px;"></div>
+    </div>
+  </div>
+
+  <script>
+    let eventSource = null;
+
+    function getApiUrl() {
+      return document.getElementById('api-url').value.replace(/\/$/, '');
+    }
+
+    async function testConnection() {
+      const statusEl = document.getElementById('connection-status');
+      try {
+        const response = await fetch(`${getApiUrl()}/health`);
+        const data = await response.json();
+        statusEl.innerHTML = `<span style="color: #10b981;">✅ Connected - ${data.status}</span>`;
+      } catch (e) {
+        statusEl.innerHTML = `<span style="color: #ef4444;">❌ Connection failed</span>`;
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    }
+
+    function setStatus(status, text) {
+      const el = document.getElementById('status-indicator');
+      el.className = `status-${status}`;
+      el.textContent = text;
+    }
+
+    function logEvent(event) {
+      const log = document.getElementById('event-log');
+      const time = new Date().toLocaleTimeString();
+      log.textContent = `[${time}] ${event.event_type}: ${JSON.stringify(event.payload || {})}\n${log.textContent}`;
+    }
+
+    function clearUI() {
+      document.getElementById('progress-section').classList.add('hidden');
+      document.getElementById('messages-section').classList.add('hidden');
+      document.getElementById('files-section').classList.add('hidden');
+      document.getElementById('result-section').classList.add('hidden');
+      document.getElementById('progress-steps').innerHTML = '';
+      document.getElementById('messages').innerHTML = '';
+      document.getElementById('files-list').innerHTML = '';
+    }
+
+    let progressSteps = {};
+    let files = {};
+
+    function updateProgress(steps) {
+      const container = document.getElementById('progress-steps');
+      container.innerHTML = '';
+      
+      for (const [id, step] of Object.entries(steps)) {
+        const icon = step.status === 'completed' ? '✅' : step.status === 'in_progress' ? '🔄' : '⏳';
+        container.innerHTML += `<div class="progress-step ${step.status}">${icon} ${step.label || id}</div>`;
+      }
+      
+      document.getElementById('progress-section').classList.remove('hidden');
+    }
+
+    function addMessage(content) {
+      const container = document.getElementById('messages');
+      container.innerHTML += `<div class="message">💬 ${content}</div>`;
+      document.getElementById('messages-section').classList.remove('hidden');
+    }
+
+    function updateFile(path, status, duration) {
+      files[path] = { status, duration };
+      const container = document.getElementById('files-list');
+      container.innerHTML = '';
+      
+      for (const [p, f] of Object.entries(files)) {
+        const icon = f.status === 'complete' ? '✅' : '✏️';
+        const durationText = f.duration ? ` (${f.duration}ms)` : '';
+        container.innerHTML += `<div class="file-item ${f.status}">${icon} ${p}${durationText}</div>`;
+      }
+      
+      document.getElementById('files-section').classList.remove('hidden');
+    }
+
+    function showResult(success, data) {
+      const container = document.getElementById('result-section');
+      
+      if (success) {
+        container.innerHTML = `
+          <div class="success-box">
+            <h2 style="color: #10b981; margin-bottom: 10px;">✨ Success!</h2>
+            <p>Project ID: <strong>${data.project_id}</strong></p>
+            <p style="margin-top: 10px;">
+              <button onclick="viewProject('${data.project_id}')">View Project</button>
+            </p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="error-box">
+            <h2>❌ Error</h2>
+            <p>${data.error || data.message || 'Unknown error'}</p>
+          </div>
+        `;
+      }
+      
+      container.classList.remove('hidden');
+    }
+
+    function generateWebsite() {
+      clearUI();
+      progressSteps = {};
+      files = {};
+      
+      const prompt = document.getElementById('prompt').value;
+      if (!prompt.trim()) {
+        alert('Please enter a prompt');
+        return;
+      }
+      
+      const businessName = document.getElementById('business-name').value;
+      const websiteType = document.getElementById('website-type').value;
+      
+      const url = new URL(`${getApiUrl()}/api/generate/stream`);
+      url.searchParams.set('prompt', prompt);
+      if (businessName) url.searchParams.set('business_name', businessName);
+      if (websiteType) url.searchParams.set('website_type', websiteType);
+      
+      document.getElementById('generate-btn').disabled = true;
+      setStatus('thinking', '🤔 Thinking...');
+      
+      eventSource = new EventSource(url);
+      
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        logEvent(data);
+        
+        switch (data.event_type) {
+          case 'thinking.start':
+            setStatus('thinking', '🤔 Thinking...');
+            break;
+            
+          case 'thinking.end':
+            setStatus('generating', '⚡ Generating...');
+            break;
+            
+          case 'progress.init':
+            data.payload.steps.forEach(step => {
+              progressSteps[step.id] = { label: step.label, status: step.status };
+            });
+            updateProgress(progressSteps);
+            break;
+            
+          case 'progress.update':
+            if (progressSteps[data.payload.step_id]) {
+              progressSteps[data.payload.step_id].status = data.payload.status;
+            }
+            updateProgress(progressSteps);
+            break;
+            
+          case 'chat.message':
+            addMessage(data.payload.content);
+            break;
+            
+          case 'fs.write':
+          case 'edit.start':
+            updateFile(data.payload.path, 'editing');
+            break;
+            
+          case 'edit.end':
+            updateFile(data.payload.path, 'complete', data.payload.duration_ms);
+            break;
+            
+          case 'project.saved':
+            setStatus('success', '✅ Complete!');
+            showResult(true, data.payload);
+            document.getElementById('generate-btn').disabled = false;
+            eventSource.close();
+            break;
+            
+          case 'error':
+          case 'stream.failed':
+            setStatus('error', '❌ Failed');
+            showResult(false, data.payload);
+            document.getElementById('generate-btn').disabled = false;
+            eventSource.close();
+            break;
+        }
+      };
+      
+      eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
+        setStatus('error', '❌ Connection lost');
+        document.getElementById('generate-btn').disabled = false;
+        eventSource.close();
+      };
+    }
+
+    async function modifyProject() {
+      clearUI();
+      const projectId = document.getElementById('modify-project-id').value;
+      const prompt = document.getElementById('modify-prompt').value;
+      
+      if (!prompt.trim()) {
+        alert('Please enter modification instructions');
+        return;
+      }
+      
+      setStatus('generating', '⚡ Modifying...');
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/modify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, project_id: projectId || undefined })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          setStatus('success', '✅ Modified!');
+          showResult(true, data);
+        } else {
+          setStatus('error', '❌ Failed');
+          showResult(false, { error: data.detail });
+        }
+      } catch (e) {
+        setStatus('error', '❌ Error');
+        showResult(false, { error: e.message });
+      }
+    }
+
+    async function sendChat() {
+      const message = document.getElementById('chat-message').value;
+      if (!message.trim()) return;
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        const responseEl = document.getElementById('chat-response');
+        responseEl.textContent = data.message;
+        responseEl.classList.remove('hidden');
+      } catch (e) {
+        alert('Chat error: ' + e.message);
+      }
+    }
+
+    async function listProjects() {
+      try {
+        const response = await fetch(`${getApiUrl()}/api/projects`);
+        const data = await response.json();
+        
+        const listEl = document.getElementById('projects-list');
+        listEl.textContent = JSON.stringify(data, null, 2);
+        listEl.classList.remove('hidden');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function getLatestProject() {
+      try {
+        const response = await fetch(`${getApiUrl()}/api/projects/latest`);
+        const data = await response.json();
+        
+        const listEl = document.getElementById('projects-list');
+        listEl.textContent = JSON.stringify(data, null, 2);
+        listEl.classList.remove('hidden');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function viewProject(projectId) {
+      try {
+        const response = await fetch(`${getApiUrl()}/api/projects/${projectId}`);
+        const data = await response.json();
+        
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // Test connection on load
+    testConnection();
+  </script>
+</body>
+</html>
+
+
+

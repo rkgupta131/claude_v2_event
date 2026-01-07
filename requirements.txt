@@ -1,0 +1,30 @@
+# ===========================================
+# AI Project Generator - Requirements
+# ===========================================
+
+# Core API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Data Validation
+pydantic>=2.5.0
+
+# Environment & Config
+python-dotenv>=1.0.0
+
+# HTTP Client
+requests>=2.31.0
+httpx>=0.26.0
+
+# AI/LLM Providers
+anthropic>=0.18.0
+
+# Async Support
+sse-starlette>=1.6.0
+
+# Optional: Streamlit (for demo UI)
+# streamlit>=1.31.0
+
+# Optional: Google AI (if needed)
+# google-genai>=0.3.0
+
