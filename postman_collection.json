@@ -1,0 +1,243 @@
+{
+	"info": {
+		"_postman_id": "api-collection-2026",
+		"name": "AI Project Generator API",
+		"description": "Simplified payloads with only: prompt, project_id, model_family, model_name",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Generate - Anthropic Claude",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\",\n  \"model_family\": \"Anthropic\",\n  \"model_name\": \"claude-opus-4-5-20251101\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				}
+			}
+		},
+		{
+			"name": "Generate - OpenAI GPT-4",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a portfolio website\",\n  \"model_family\": \"OpenAI\",\n  \"model_name\": \"gpt-4\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				}
+			}
+		},
+		{
+			"name": "Generate - OpenAI GPT-5.2",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create an e-commerce store\",\n  \"model_family\": \"OpenAI\",\n  \"model_name\": \"gpt-5.2\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				}
+			}
+		},
+		{
+			"name": "Modify - Latest Project",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Change hero text to Welcome\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"OpenAI\",\n  \"model_name\": \"gpt-4\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				}
+			}
+		},
+		{
+			"name": "Modify - Specific Project",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Add a contact form section\",\n  \"project_id\": \"project_v13_20260108_104713\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"Anthropic\",\n  \"model_name\": \"claude-opus-4-5-20251101\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				}
+			}
+		},
+		{
+			"name": "Chat - Simple",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"message\": \"What frameworks do you support?\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/chat",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "chat"]
+				}
+			}
+		},
+		{
+			"name": "Chat - With History",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"message\": \"Can you explain React components?\",\n  \"conversation_id\": \"conv_123\",\n  \"history\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"What frameworks do you support?\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"I support React with Vite and TypeScript for building modern web applications.\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/chat",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "chat"]
+				}
+			}
+		},
+		{
+			"name": "Classify Intent",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"text\": \"Hello! Can you create a website for my bakery?\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/classify",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "classify"]
+				}
+			}
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/health",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["health"]
+				}
+			}
+		},
+		{
+			"name": "List Models",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/models",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "models"]
+				}
+			}
+		}
+	]
+}
+

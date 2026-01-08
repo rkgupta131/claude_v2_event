@@ -25,7 +25,10 @@ ENV/
 # Project specific
 output/
 modified_output/
-*.json
+output/*.json
+modified_output/*.json
+# Allow postman_collection.json
+!postman_collection.json
 
 # Logs
 *.log
