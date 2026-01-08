@@ -18,6 +18,7 @@ httpx>=0.26.0
 
 # AI/LLM Providers
 anthropic>=0.18.0
+openai>=1.10.0
 
 # Async Support
 sse-starlette>=1.6.0

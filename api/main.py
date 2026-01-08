@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 load_dotenv()
 
 # Import routes
-from api.routes import generate, projects, chat
+from api.routes import generate, projects, chat, unified
 from api.schemas import HealthResponse
 
 
@@ -116,6 +116,10 @@ app.add_middleware(
 # INCLUDE ROUTERS
 # ==========================================================
 
+# Unified API (recommended for new integrations)
+app.include_router(unified.router, prefix="/api", tags=["Unified API"])
+
+# Legacy endpoints (still supported)
 app.include_router(generate.router, prefix="/api", tags=["Generation"])
 app.include_router(projects.router, prefix="/api", tags=["Projects"])
 app.include_router(chat.router, prefix="/api", tags=["Chat & Classification"])

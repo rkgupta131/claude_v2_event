@@ -113,6 +113,53 @@ class ClassifyRequest(BaseModel):
         }
 
 
+class ModelFamily(str, Enum):
+    """Supported AI model families."""
+    ANTHROPIC = "Anthropic"
+    OPENAI = "OpenAI"
+    GOOGLE = "Google"
+    MISTRAL = "Mistral"
+
+
+class EventType(str, Enum):
+    """Type of operation to perform."""
+    GENERATE = "generate"
+    MODIFY = "modify"
+
+
+class UnifiedRequest(BaseModel):
+    """Unified request schema for all AI operations."""
+    prompt: str = Field(..., description="User's request or modification prompt", min_length=1)
+    project_id: Optional[str] = Field(None, description="Project ID (required for modify event_type)")
+    event_type: EventType = Field(EventType.GENERATE, description="Operation type: generate or modify")
+    model_family: ModelFamily = Field(ModelFamily.ANTHROPIC, description="AI provider to use")
+    model_name: str = Field("claude-opus-4-5-20251101", description="Specific model name")
+    
+    # Optional detailed requirements (for generation)
+    business_name: Optional[str] = Field(None, description="Business or website name")
+    tagline: Optional[str] = Field(None, description="Tagline or main message")
+    website_type: Optional[WebsiteType] = Field(None, description="Type of website")
+    color_scheme: Optional[ColorScheme] = Field(None, description="Preferred color scheme")
+    key_features: Optional[List[str]] = Field(None, description="Key features or products")
+    sections: Optional[List[str]] = Field(None, description="Sections to include")
+    email: Optional[str] = Field(None, description="Contact email")
+    phone: Optional[str] = Field(None, description="Contact phone")
+    additional_info: Optional[str] = Field(None, description="Additional requirements")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "prompt": "Create a landing page for a coffee shop",
+                "project_id": None,
+                "event_type": "generate",
+                "model_family": "Anthropic",
+                "model_name": "claude-opus-4-5-20251101",
+                "business_name": "Bean Dreams",
+                "website_type": "Landing Page"
+            }
+        }
+
+
 # ==========================================================
 # RESPONSE SCHEMAS
 # ==========================================================
