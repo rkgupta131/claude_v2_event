@@ -285,10 +285,6 @@ def generate_project_openai(user_prompt: str, model: str, client: OpenAI, emitte
     for idx, path in enumerate(file_list):
         print(f"\n📄 [{idx+1}/{total_files}] Generating: {path}")
         
-        if emitter:
-            emitter.chat_message(f"✍️ Writing {path}...")
-            emitter.edit_start(path)
-        
         file_start = time.time()
         content = generate_file_openai(client, model, path, user_prompt)
         project["project"]["files"][path] = {"content": content}
@@ -297,6 +293,8 @@ def generate_project_openai(user_prompt: str, model: str, client: OpenAI, emitte
         print(f"   ✅ Completed in {file_duration/1000:.2f}s")
         
         if emitter:
+            emitter.chat_message(f"✍️ Writing {path}...")
+            emitter.edit_start(path, content)
             lang = detect_language(path)
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, file_duration)
@@ -422,7 +420,7 @@ RESPONSE FORMAT (JSON only, no markdown):
     if emitter:
         for path, content in patch.get("modified_files", {}).items():
             emitter.chat_message(f"✏️ Modifying {path}...")
-            emitter.edit_start(path)
+            emitter.edit_start(path, content)
             lang = detect_language(path)
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, 500)

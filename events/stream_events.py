@@ -275,14 +275,14 @@ class StreamEventEmitter:
         """Emit edit.read - Reading a file."""
         return self._emit(EventType.EDIT_READ, {"path": path})
     
-    def edit_start(self, path: str, content_preview: str = "") -> StreamEvent:
+    def edit_start(self, path: str, content: str = "") -> StreamEvent:
         """
         Emit edit.start - Start editing a file.
         Can be emitted multiple times for typing animation.
         """
         return self._emit(EventType.EDIT_START, {
             "path": path,
-            "content": content_preview[:100] if content_preview else ""
+            "content": content
         })
     
     def edit_end(self, path: str, duration_ms: int) -> StreamEvent:

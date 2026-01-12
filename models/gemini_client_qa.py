@@ -560,7 +560,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     
     if emitter:
         emitter.fs_write("index.html", index_html_content, "html")
-        emitter.edit_start("index.html", "<!DOCTYPE html>...")
+        emitter.edit_start("index.html", index_html_content)
         emitter.edit_end("index.html", 50)
         emitter.edit_security_check("index.html", "passed")
         emitter.progress_update("scaffold", "completed")
@@ -589,12 +589,6 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     for idx, path in enumerate(file_list):
         print(f"\n📄 [{idx+1}/{total_files}] Generating: {path}")
         
-        # Emit events for each file
-        if emitter:
-            emitter.chat_message(f"✍️ Writing {path}...")
-            emitter.edit_read(path)
-            emitter.edit_start(path)
-        
         file_start = time.time()
         
         # Generate the file content
@@ -604,8 +598,11 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
         file_duration = int((time.time() - file_start) * 1000)
         print(f"   ✅ Completed in {file_duration/1000:.2f}s")
         
-        # Emit file write events
+        # Emit events for each file
         if emitter:
+            emitter.chat_message(f"✍️ Writing {path}...")
+            emitter.edit_read(path)
+            emitter.edit_start(path, content)
             lang = detect_language(path)
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, file_duration)
@@ -856,7 +853,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             for path, content in patch.get("modified_files", {}).items():
                 emitter.chat_message(f"✏️ Modifying {path}...")
                 emitter.edit_read(path)
-                emitter.edit_start(path, content[:50] if content else "")
+                emitter.edit_start(path, content)
                 lang = detect_language(path)
                 emitter.fs_write(path, content, lang)
                 emitter.edit_end(path, 500)  # Approximate duration
