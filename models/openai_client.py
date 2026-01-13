@@ -299,6 +299,8 @@ def generate_project_openai(user_prompt: str, model: str, client: OpenAI, emitte
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, file_duration)
             emitter.edit_security_check(path, "passed")
+            # Small delay to ensure events are processed before moving to next file
+            time.sleep(0.05)
     
     if emitter:
         emitter.progress_update("code", "completed")
@@ -416,7 +418,7 @@ RESPONSE FORMAT (JSON only, no markdown):
     if "sections_changed" not in patch:
         patch["sections_changed"] = []
     
-    # Emit events
+    # Emit events (one file at a time)
     if emitter:
         for path, content in patch.get("modified_files", {}).items():
             emitter.chat_message(f"✏️ Modifying {path}...")
@@ -424,6 +426,8 @@ RESPONSE FORMAT (JSON only, no markdown):
             lang = detect_language(path)
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, 500)
+            # Small delay to ensure events are processed before moving to next file
+            time.sleep(0.05)
         
         emitter.progress_update("code", "completed")
         emitter.progress_update("build", "in_progress")

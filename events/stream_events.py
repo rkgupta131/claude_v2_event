@@ -253,14 +253,14 @@ class StreamEventEmitter:
         
         Args:
             path: File path
-            content: File content
+            content: File content (full content, not truncated)
             language: Programming language
         """
         return self._emit(EventType.FS_WRITE, {
             "path": path,
             "kind": "file",
             "language": language,
-            "content": content[:200] + "..." if len(content) > 200 else content  # Truncate for display
+            "content": content
         })
     
     def fs_delete(self, path: str) -> StreamEvent:

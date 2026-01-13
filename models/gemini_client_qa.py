@@ -598,7 +598,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
         file_duration = int((time.time() - file_start) * 1000)
         print(f"   ✅ Completed in {file_duration/1000:.2f}s")
         
-        # Emit events for each file
+        # Emit events for each file (one file at a time)
         if emitter:
             emitter.chat_message(f"✍️ Writing {path}...")
             emitter.edit_read(path)
@@ -607,6 +607,8 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
             emitter.fs_write(path, content, lang)
             emitter.edit_end(path, file_duration)
             emitter.edit_security_check(path, "passed")
+            # Small delay to ensure events are processed before moving to next file
+            time.sleep(0.05)
     
     print("-" * 50)
     code_gen_time = (time.time() - phase_start) * 1000
@@ -849,7 +851,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
         phase_start = time.time()
         print("⚡ [PHASE] Applying changes...")
         if emitter:
-            # Emit events for modified files
+            # Emit events for modified files (one file at a time)
             for path, content in patch.get("modified_files", {}).items():
                 emitter.chat_message(f"✏️ Modifying {path}...")
                 emitter.edit_read(path)
@@ -858,14 +860,18 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
                 emitter.fs_write(path, content, lang)
                 emitter.edit_end(path, 500)  # Approximate duration
                 emitter.edit_security_check(path, "passed")
+                # Small delay to ensure events are processed before moving to next file
+                time.sleep(0.05)
             
-            # Emit events for new files
+            # Emit events for new files (one file at a time)
             for path, content in patch.get("new_files", {}).items():
                 emitter.chat_message(f"📝 Creating {path}...")
                 emitter.fs_create(path, "file")
                 lang = detect_language(path)
                 emitter.fs_write(path, content, lang)
                 emitter.edit_security_check(path, "passed")
+                # Small delay to ensure events are processed before moving to next file
+                time.sleep(0.05)
             
             # Emit events for deleted files
             for path in patch.get("deleted_files", []):
