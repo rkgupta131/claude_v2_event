@@ -84,7 +84,7 @@ class UsageMetrics:
     def print_summary(self, label: str = ""):
         """Print a detailed summary of usage metrics."""
         print(f"\n{'='*60}")
-        print(f"📊 DETAILED TIMING BREAKDOWN {label}")
+        print(f"DETAILED TIMING BREAKDOWN {label}")
         print(f"{'='*60}")
         
         # Overall metrics
@@ -274,7 +274,7 @@ def _call_claude(prompt: str, max_retries: int = 5, track_metrics: bool = True, 
                     if first_token_time is None:
                         first_token_time = time.time()
                         ttft_ms = (first_token_time - start_time) * 1000
-                        print(f"⏱️  {file_label}Time to First Token: {ttft_ms:.2f} ms")
+                        print(f" {file_label}Time to First Token: {ttft_ms:.2f} ms")
                     full_response += text
                 
                 # Get final message for token counts
@@ -587,7 +587,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     total_files = len(file_list)
     
     for idx, path in enumerate(file_list):
-        print(f"\n📄 [{idx+1}/{total_files}] Generating: {path}")
+        print(f"\n [{idx+1}/{total_files}] Generating: {path}")
         
         file_start = time.time()
         
@@ -600,7 +600,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
         
         # Emit events for each file (one file at a time)
         if emitter:
-            emitter.chat_message(f"✍️ Writing {path}...")
+            emitter.chat_message(f"Writing {path}...")
             emitter.edit_read(path)
             emitter.edit_start(path, content)
             lang = detect_language(path)
