@@ -88,17 +88,17 @@ class UsageMetrics:
         print(f"{'='*60}")
         
         # Overall metrics
-        print(f"\n📈 OVERALL METRICS:")
-        print(f"   ⏱️  First Token: {self.time_to_first_token_ms:.2f} ms ({self.time_to_first_token_ms/1000:.2f} s)")
-        print(f"   ⏱️  Total Time: {self.total_time_ms:.2f} ms ({self.total_time_ms/1000:.2f} s)")
-        print(f"   📥 Input Tokens: {self.input_tokens:,}")
-        print(f"   📤 Output Tokens: {self.output_tokens:,}")
-        print(f"   📊 Total Tokens: {self.total_tokens:,}")
-        print(f"   🔄 API Calls: {self.api_calls}")
+        print(f"\n OVERALL METRICS:")
+        print(f" First Token: {self.time_to_first_token_ms:.2f} ms ({self.time_to_first_token_ms/1000:.2f} s)")
+        print(f" Total Time: {self.total_time_ms:.2f} ms ({self.total_time_ms/1000:.2f} s)")
+        print(f" Input Tokens: {self.input_tokens:,}")
+        print(f" Output Tokens: {self.output_tokens:,}")
+        print(f" Total Tokens: {self.total_tokens:,}")
+        print(f" API Calls: {self.api_calls}")
         
         # Phase breakdown
         if self.phase_timings:
-            print(f"\n📋 PHASE BREAKDOWN:")
+            print(f"\n PHASE BREAKDOWN:")
             total_phase_time = sum(p.get("duration_ms", 0) for p in self.phase_timings.values())
             for phase, timing in self.phase_timings.items():
                 pct = (timing["duration_ms"] / total_phase_time * 100) if total_phase_time > 0 else 0
@@ -123,9 +123,9 @@ class UsageMetrics:
         if self.phase_timings and self.file_timings:
             file_gen_time = sum(f.get("total_ms", 0) for f in self.file_timings.values())
             other_time = self.total_time_ms - file_gen_time
-            print(f"⏱️  TIME ALLOCATION:")
-            print(f"   📁 File Generation (LLM calls): {file_gen_time/1000:.2f}s ({file_gen_time/self.total_time_ms*100:.1f}%)")
-            print(f"   ⚙️  Other (setup, events, etc.): {other_time/1000:.2f}s ({other_time/self.total_time_ms*100:.1f}%)")
+            print(f" TIME ALLOCATION:")
+            print(f" File Generation (LLM calls): {file_gen_time/1000:.2f}s ({file_gen_time/self.total_time_ms*100:.1f}%)")
+            print(f" Other (setup, events, etc.): {other_time/1000:.2f}s ({other_time/self.total_time_ms*100:.1f}%)")
         
         print(f"{'='*60}\n")
 
@@ -297,7 +297,7 @@ def _call_claude(prompt: str, max_retries: int = 5, track_metrics: bool = True, 
                 )
             
             # Print token usage
-            print(f"📊 {file_label}Tokens: {input_tokens:,} in | {output_tokens:,} out | Total: {total_ms/1000:.2f}s")
+            print(f" {file_label}Tokens: {input_tokens:,} in | {output_tokens:,} out | Total: {total_ms/1000:.2f}s")
             
             return full_response
             
@@ -504,13 +504,13 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     phase_start = generation_start_time
     
     print("\n" + "="*60)
-    print("🚀 STARTING PROJECT GENERATION")
+    print(" STARTING PROJECT GENERATION")
     print("="*60 + "\n")
     
     # === THINKING START ===
     if emitter:
         emitter.thinking_start()
-        emitter.chat_message("🧠 Analyzing your request and planning the project structure...")
+        emitter.chat_message("Analyzing your request, understanding the intent, and preparing a well-structured project layout...")
         emitter.progress_init(mode="modal")
         time.sleep(0.1)  # Small delay for UI
     
@@ -524,20 +524,20 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
 
     # === PLANNING PHASE ===
     phase_start = time.time()
-    print("📋 [PHASE] Planning...")
+    print(" [PHASE] Planning...")
     if emitter:
         emitter.progress_update("plan", "in_progress")
-        emitter.chat_message("📋 Planning project architecture...")
+        emitter.chat_message("Planning the project architecture and defining core structural components...")
         time.sleep(0.2)
         emitter.progress_update("plan", "completed")
     metrics.add_phase_timing("1_planning", (time.time() - phase_start) * 1000)
     
     # === SCAFFOLDING PHASE ===
     phase_start = time.time()
-    print("📁 [PHASE] Scaffolding...")
+    print(" [PHASE] Scaffolding...")
     if emitter:
         emitter.progress_update("scaffold", "in_progress")
-        emitter.chat_message("📁 Setting up project structure...")
+        emitter.chat_message("Setting up the project structure and organizing files and folders...")
         emitter.fs_create("src", "folder")
         emitter.fs_create("src/components", "folder")
         time.sleep(0.1)
@@ -568,20 +568,20 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     
     # === DEPENDENCIES PHASE ===
     phase_start = time.time()
-    print("📦 [PHASE] Dependencies...")
+    print("[PHASE] Dependencies...")
     if emitter:
         emitter.progress_update("deps", "in_progress")
-        emitter.chat_message("📦 Configuring dependencies...")
+        emitter.chat_message("Configuring dependencies...")
     metrics.add_phase_timing("3_dependencies", (time.time() - phase_start) * 1000)
     
     # === CODE GENERATION PHASE (LLM CALLS - MAIN TIME CONSUMER) ===
     phase_start = time.time()
-    print("\n⚡ [PHASE] Code Generation (LLM calls)...")
+    print("\n [PHASE] Code Generation (LLM calls)...")
     print("-" * 50)
     if emitter:
         emitter.progress_update("deps", "completed")
         emitter.progress_update("code", "in_progress")
-        emitter.chat_message("⚡ Generating code files...")
+        emitter.chat_message("Configuring project dependencies to support a smooth build process...")
     
     file_list = get_file_list()
     total_files = len(file_list)
@@ -596,7 +596,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
         project["project"]["files"][path] = {"content": content}
         
         file_duration = int((time.time() - file_start) * 1000)
-        print(f"   ✅ Completed in {file_duration/1000:.2f}s")
+        print(f"Completed in {file_duration/1000:.2f}s")
         
         # Emit events for each file (one file at a time)
         if emitter:
@@ -624,7 +624,7 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     print("🔨 [PHASE] Build...")
     if emitter:
         emitter.progress_update("build", "in_progress")
-        emitter.chat_message("🔨 Building project...")
+        emitter.chat_message("Building the project and preparing it for execution...")
         emitter.build_start()
         emitter.build_log("Compiling TypeScript...", "info")
         time.sleep(0.1)
@@ -634,22 +634,22 @@ def generate_project(user_prompt: str, emitter: Optional[StreamEventEmitter] = N
     
     # === VERIFICATION PHASE ===
     phase_start = time.time()
-    print("✅ [PHASE] Verification...")
+    print("[PHASE] Verification...")
     if emitter:
         emitter.progress_update("verify", "in_progress")
-        emitter.chat_message("✅ Verifying project structure...")
+        emitter.chat_message("Verifying the project structure for correctness and completeness...")
         emitter.build_log("All checks passed!", "success")
         emitter.progress_update("verify", "completed")
     metrics.add_phase_timing("6_verification", (time.time() - phase_start) * 1000)
     
     # === JSON SERIALIZATION (measure this separately) ===
     phase_start = time.time()
-    print("📝 [PHASE] JSON Serialization...")
+    print("[PHASE] JSON Serialization...")
     
     # === THINKING END ===
     if emitter:
         emitter.thinking_end()
-        emitter.chat_message("🎉 Project generated successfully!")
+        emitter.chat_message("Project generated successfully and ready for execution.")
         emitter.progress_transition("inline")
         emitter.stream_complete()
     
@@ -691,13 +691,13 @@ def generate_patch(modification_prompt: str, base_project: dict, emitter: Option
     phase_start = modification_start_time
     
     print("\n" + "="*60)
-    print("🔧 STARTING PROJECT MODIFICATION")
+    print("STARTING PROJECT MODIFICATION")
     print("="*60 + "\n")
     
     # === THINKING START ===
     if emitter:
         emitter.thinking_start()
-        emitter.chat_message("🔍 Analyzing existing project...")
+        emitter.chat_message("Analyzing the existing project to understand its structure and intent...")
         emitter.progress_init(mode="modal", steps=[
             emitter.DEFAULT_STEPS[0],  # Planning
             emitter.DEFAULT_STEPS[3],  # Code Generation
@@ -760,10 +760,10 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
 
     # === PLANNING PHASE ===
     phase_start = time.time()
-    print("📋 [PHASE] Planning (LLM call)...")
+    print("[PHASE] Planning (LLM call)...")
     if emitter:
         emitter.progress_update("plan", "in_progress")
-        emitter.chat_message("📋 Identifying sections to modify...")
+        emitter.chat_message("Identifying the relevant sections that require modification...")
         time.sleep(0.1)
 
     try:
@@ -788,7 +788,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
                 if first_token_time is None:
                     first_token_time = time.time()
                     ttft_ms = (first_token_time - start_time) * 1000
-                    print(f"⏱️  Time to First Token (Patch): {ttft_ms:.2f} ms")
+                    print(f" Time to First Token (Patch): {ttft_ms:.2f} ms")
                 full_response += text_chunk
             
             # Get final message for token counts
@@ -800,8 +800,8 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
         total_ms = (end_time - start_time) * 1000
         ttft_ms = (first_token_time - start_time) * 1000 if first_token_time else 0
         
-        print(f"📊 Tokens - Input: {input_tokens:,} | Output: {output_tokens:,} | Total: {input_tokens + output_tokens:,}")
-        print(f"⏱️  LLM Call Duration: {total_ms/1000:.2f}s")
+        print(f"Tokens - Input: {input_tokens:,} | Output: {output_tokens:,} | Total: {input_tokens + output_tokens:,}")
+        print(f"LLM Call Duration: {total_ms/1000:.2f}s")
         
         # Track metrics
         metrics.add_phase_timing("2_llm_call", total_ms)
@@ -811,7 +811,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
 
         # === JSON PARSING PHASE ===
         phase_start = time.time()
-        print("📝 [PHASE] Parsing response...")
+        print("[PHASE] Parsing response...")
         
         # === PLANNING COMPLETE ===
         if emitter:
@@ -849,11 +849,11 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
 
         # === EMIT FILE MODIFICATION EVENTS ===
         phase_start = time.time()
-        print("⚡ [PHASE] Applying changes...")
+        print("[PHASE] Applying changes...")
         if emitter:
             # Emit events for modified files (one file at a time)
             for path, content in patch.get("modified_files", {}).items():
-                emitter.chat_message(f"✏️ Modifying {path}...")
+                emitter.chat_message(f"Modifying {path}...")
                 emitter.edit_read(path)
                 emitter.edit_start(path, content)
                 lang = detect_language(path)
@@ -865,7 +865,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             
             # Emit events for new files (one file at a time)
             for path, content in patch.get("new_files", {}).items():
-                emitter.chat_message(f"📝 Creating {path}...")
+                emitter.chat_message(f"Creating {path}...")
                 emitter.fs_create(path, "file")
                 lang = detect_language(path)
                 emitter.fs_write(path, content, lang)
@@ -875,14 +875,14 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             
             # Emit events for deleted files
             for path in patch.get("deleted_files", []):
-                emitter.chat_message(f"🗑️ Removing {path}...")
+                emitter.chat_message(f" Removing {path}...")
                 emitter.fs_delete(path)
             
             emitter.progress_update("code", "completed")
             
             # === BUILD PHASE ===
             emitter.progress_update("build", "in_progress")
-            emitter.chat_message("🔨 Applying changes...")
+            emitter.chat_message("Applying the modifications to the project and preparing it for execution...")
             emitter.build_start()
             emitter.build_log("Applying modifications...", "info")
             time.sleep(0.1)
@@ -890,7 +890,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             
             # === VERIFICATION ===
             emitter.progress_update("verify", "in_progress")
-            emitter.chat_message("✅ Verifying changes...")
+            emitter.chat_message("Verifying the changes for correctness and completeness...")
             emitter.build_log("All modifications verified!", "success")
             emitter.progress_update("verify", "completed")
             
@@ -898,9 +898,9 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             emitter.thinking_end()
             sections = patch.get("sections_changed", [])
             if sections:
-                emitter.chat_message(f"🎉 Modified: {', '.join(sections)}")
+                emitter.chat_message(f"Modified sections: {', '.join(sections)}")
             else:
-                emitter.chat_message("🎉 Modifications complete!")
+                emitter.chat_message("Modifications complete and ready for execution.")
             emitter.progress_transition("inline")
             emitter.stream_complete()
         

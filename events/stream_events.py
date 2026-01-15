@@ -118,12 +118,12 @@ class StreamEventEmitter:
     
     # Default progress steps for a new build
     DEFAULT_STEPS = [
-        ProgressStep("plan", "🧠 Planning"),
-        ProgressStep("scaffold", "📁 Scaffolding"),
-        ProgressStep("deps", "📦 Dependencies"),
-        ProgressStep("code", "⚡ Code Generation"),
-        ProgressStep("build", "🔨 Build"),
-        ProgressStep("verify", "✅ Verification"),
+        ProgressStep("plan", "Planning"),
+        ProgressStep("scaffold", "Scaffolding"),
+        ProgressStep("deps", "Dependencies"),
+        ProgressStep("code", "Code Generation"),
+        ProgressStep("build", "Build"),
+        ProgressStep("verify", "Verification"),
     ]
     
     def __init__(self, callback: Optional[Callable[[StreamEvent], None]] = None):
