@@ -42,17 +42,17 @@ async def lifespan(app: FastAPI):
     
     # Check for API key
     if not os.getenv("ANTHROPIC_API_KEY"):
-        print("⚠️  WARNING: ANTHROPIC_API_KEY not set!")
+        print(" WARNING: ANTHROPIC_API_KEY not set!")
     else:
-        print("✅ API key configured")
+        print(" API key configured")
     
-    print("✅ API ready at http://localhost:8000")
-    print("📚 Docs at http://localhost:8000/docs")
+    print(" API ready at http://localhost:8000")
+    print("Docs at http://localhost:8000/docs")
     
     yield
     
     # Shutdown
-    print("👋 Shutting down API...")
+    print(" Shutting down API...")
 
 
 # ==========================================================
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AI Project Generator API",
     description="""
-## 🚀 AI Project Generator with Real-Time Streaming Events
+## AI Project Generator with Real-Time Streaming Events
 
 This API allows you to generate and modify web projects using AI, with real-time event streaming via SSE (Server-Sent Events).
 

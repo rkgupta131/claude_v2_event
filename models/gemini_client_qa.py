@@ -351,6 +351,147 @@ def extract_json(raw: str):
         raise ValueError(f"Invalid JSON: {str(e)}\n{match.group(1)[:500]}")
 
 # ==========================================================
+# SYNTAX VALIDATION AND AUTO-FIX
+# ==========================================================
+
+def validate_and_fix_syntax(content: str, path: str) -> str:
+    """
+    Validate and auto-fix syntax errors in generated code files.
+    
+    Args:
+        content: File content to validate
+        path: File path for specific validation rules
+    
+    Returns:
+        str: Fixed content with validated syntax
+    """
+    if not content or not content.strip():
+        return content
+    
+    # Check if file is TypeScript/JavaScript/TSX/JSX
+    is_js_like = any(path.endswith(ext) for ext in ['.ts', '.tsx', '.js', '.jsx', '.json'])
+    
+    if not is_js_like:
+        return content
+    
+    # Track brackets, parentheses, and braces
+    stack = []
+    in_string = False
+    string_char = None
+    escaped = False
+    
+    for i, char in enumerate(content):
+        if escaped:
+            escaped = False
+            continue
+        
+        if char == '\\':
+            escaped = True
+            continue
+        
+        if not in_string:
+            if char in ('"', "'", '`'):
+                in_string = True
+                string_char = char
+            elif char == '(':
+                stack.append(('(', i))
+            elif char == ')':
+                if stack and stack[-1][0] == '(':
+                    stack.pop()
+                else:
+                    # Mismatched closing paren - might need to add opening
+                    pass
+            elif char == '[':
+                stack.append(('[', i))
+            elif char == ']':
+                if stack and stack[-1][0] == '[':
+                    stack.pop()
+            elif char == '{':
+                stack.append(('{', i))
+            elif char == '}':
+                if stack and stack[-1][0] == '{':
+                    stack.pop()
+        else:
+            if char == string_char:
+                in_string = False
+                string_char = None
+    
+    # Auto-fix common issues
+    fixed_content = content
+    
+    # Specific fix for vite.config.ts - ensure defineConfig is properly closed
+    if path == "vite.config.ts" or path == "vite.config.js":
+        # Check if defineConfig call is missing closing parenthesis
+        if "defineConfig(" in fixed_content:
+            # Count parentheses after defineConfig
+            define_config_pos = fixed_content.find('defineConfig(')
+            after_define = fixed_content[define_config_pos:]
+            
+            # Simple check: if it ends with just '}' and defineConfig is used, it needs ')'
+            content_rstrip = fixed_content.rstrip()
+            if content_rstrip.endswith('}') and not content_rstrip.endswith('})'):
+                # Find the last brace position
+                last_brace_pos = content_rstrip.rfind('}')
+                
+                # Count open/close parens from defineConfig to end
+                open_parens = after_define.count('(')
+                close_parens = after_define.count(')')
+                
+                # If we have more open than close, and it ends with }, add )
+                if open_parens > close_parens:
+                    # Replace the final } with })
+                    lines = fixed_content.rstrip().split('\n')
+                    if lines:
+                        last_line = lines[-1]
+                        if last_line.strip() == '}':
+                            lines[-1] = '})'
+                            fixed_content = '\n'.join(lines)
+                        elif last_line.rstrip().endswith('}') and not last_line.rstrip().endswith('})'):
+                            # Replace final } with })
+                            lines[-1] = last_line.rstrip()[:-1] + '})'
+                            fixed_content = '\n'.join(lines)
+    
+    # General fix: if we have unmatched opening brackets at the end, close them
+    # But only do this for unmatched items, not if they're intentionally left open (like in JSX fragments)
+    unmatched_open = [item for item in stack if item[0] != '{']  # Allow unmatched braces (could be JSX)
+    
+    # Only fix unmatched parentheses and brackets, be careful with braces
+    for char_type, pos in reversed(stack):
+        if char_type == '(':
+            fixed_content = fixed_content.rstrip() + '\n)'
+        elif char_type == '[':
+            fixed_content = fixed_content.rstrip() + '\n]'
+    
+    # Validate that critical function calls are complete
+    # Check for export default function/const patterns
+    if 'export default' in fixed_content:
+        # Ensure the export statement is complete
+        lines = fixed_content.split('\n')
+        export_line_idx = None
+        for i, line in enumerate(lines):
+            if 'export default' in line and '(' in line:
+                export_line_idx = i
+        
+        if export_line_idx is not None:
+            # Count opening and closing parentheses after export default
+            export_content = '\n'.join(lines[export_line_idx:])
+            open_count = export_content.count('(')
+            close_count = export_content.count(')')
+            
+            # If missing closing parens, try to add them at the end
+            if open_count > close_count:
+                missing = open_count - close_count
+                fixed_content = fixed_content.rstrip() + '\n' + ')' * missing
+    
+    # Ensure file ends with newline if it originally did
+    if content.endswith('\n') and not fixed_content.endswith('\n'):
+        fixed_content += '\n'
+    elif not content.endswith('\n') and fixed_content.endswith('\n'):
+        fixed_content = fixed_content.rstrip()
+    
+    return fixed_content
+
+# ==========================================================
 # FIXED FILE LIST (ARCHITECTURE LOCKED)
 # ==========================================================
 
@@ -439,9 +580,38 @@ FILE-SPECIFIC RULES FOR src/index.css:
 CRITICAL: If any class is missing styles or looks like default HTML, the output is INVALID.
 """
 
+    if path == "vite.config.ts" or path == "vite.config.js":
+        prompt += """
+FILE-SPECIFIC RULES FOR vite.config.ts:
+- MUST be valid TypeScript/JavaScript syntax
+- MUST properly close all function calls, especially defineConfig()
+- The structure MUST be:
+  import { defineConfig } from 'vite'
+  import react from '@vitejs/plugin-react'
+  
+  export default defineConfig({
+    plugins: [react()],
+    server: {
+      port: 3000,
+      open: true
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: true
+    }
+  })
+  
+CRITICAL: The defineConfig() function call MUST be properly closed with a closing parenthesis before the final brace.
+The export statement MUST end with "})" not just "}".
+Invalid syntax will cause build failures.
+"""
+
     raw = _call_claude(prompt, file_name=path)
     data = extract_json(raw)
     content = data["content"]
+    
+    # Apply syntax validation and auto-fix
+    content = validate_and_fix_syntax(content, path)
 
     # Validation and Auto-fix
     if path == "src/main.tsx":
@@ -853,6 +1023,11 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
         if emitter:
             # Emit events for modified files (one file at a time)
             for path, content in patch.get("modified_files", {}).items():
+                # Apply syntax validation and auto-fix
+                content = validate_and_fix_syntax(content, path)
+                # Update patch with fixed content
+                patch["modified_files"][path] = content
+                
                 emitter.chat_message(f"Modifying {path}...")
                 emitter.edit_read(path)
                 emitter.edit_start(path, content)
@@ -865,6 +1040,11 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
             
             # Emit events for new files (one file at a time)
             for path, content in patch.get("new_files", {}).items():
+                # Apply syntax validation and auto-fix
+                content = validate_and_fix_syntax(content, path)
+                # Update patch with fixed content
+                patch["new_files"][path] = content
+                
                 emitter.chat_message(f"Creating {path}...")
                 emitter.fs_create(path, "file")
                 lang = detect_language(path)

@@ -159,7 +159,7 @@ async def greeting_endpoint(request: ChatRequest):
     **Response:**
     ```json
     {
-        "message": "Hello! 👋 I'm here to help you build amazing websites..."
+        "message": "Hello!  I'm here to help you build amazing websites..."
     }
     ```
     """
@@ -175,6 +175,6 @@ async def greeting_endpoint(request: ChatRequest):
     except Exception as e:
         # Fallback greeting
         return {
-            "message": "Hello! 👋 I'm your AI website builder. Tell me what kind of website you'd like to create, and I'll build it for you!"
+            "message": "Hello! I'm your AI website builder. Tell me what kind of website you'd like to create, and I'll build it for you!"
         }
 

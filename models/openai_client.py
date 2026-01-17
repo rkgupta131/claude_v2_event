@@ -18,6 +18,7 @@ from models.gemini_client_qa import (
     get_file_list,
     UsageMetrics,
     extract_json,
+    validate_and_fix_syntax,
 )
 
 
@@ -167,9 +168,38 @@ FILE-SPECIFIC RULES FOR src/index.css:
 CRITICAL: If any class is missing styles or looks like default HTML, the output is INVALID.
 """
 
+    if path == "vite.config.ts" or path == "vite.config.js":
+        prompt += """
+FILE-SPECIFIC RULES FOR vite.config.ts:
+- MUST be valid TypeScript/JavaScript syntax
+- MUST properly close all function calls, especially defineConfig()
+- The structure MUST be:
+  import { defineConfig } from 'vite'
+  import react from '@vitejs/plugin-react'
+  
+  export default defineConfig({
+    plugins: [react()],
+    server: {
+      port: 3000,
+      open: true
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: true
+    }
+  })
+  
+CRITICAL: The defineConfig() function call MUST be properly closed with a closing parenthesis before the final brace.
+The export statement MUST end with "})" not just "}".
+Invalid syntax will cause build failures.
+"""
+
     raw = _call_openai(client, model, prompt, file_name=path)
     data = extract_json(raw)
     content = data["content"]
+    
+    # Apply syntax validation and auto-fix
+    content = validate_and_fix_syntax(content, path)
 
     # Validation (same as Claude)
     if path == "src/main.tsx":
@@ -421,6 +451,11 @@ RESPONSE FORMAT (JSON only, no markdown):
     # Emit events (one file at a time)
     if emitter:
         for path, content in patch.get("modified_files", {}).items():
+            # Apply syntax validation and auto-fix
+            content = validate_and_fix_syntax(content, path)
+            # Update patch with fixed content
+            patch["modified_files"][path] = content
+            
             emitter.chat_message(f"✏️ Modifying {path}...")
             emitter.edit_start(path, content)
             lang = detect_language(path)
