@@ -419,7 +419,10 @@ def validate_and_fix_syntax(content: str, path: str) -> str:
     # Auto-fix common issues
     fixed_content = content
     
-    # Specific fix for vite.config.ts - ensure defineConfig is properly closed
+    # Check if this is a React/TSX file - be very conservative with fixes
+    is_react_file = any(path.endswith(ext) for ext in ['.tsx', '.jsx']) or 'App.tsx' in path or 'main.tsx' in path
+    
+    # Specific fix ONLY for vite.config.ts - ensure defineConfig is properly closed
     if path == "vite.config.ts" or path == "vite.config.js":
         # Check if defineConfig call is missing closing parenthesis
         if "defineConfig(" in fixed_content:
@@ -451,37 +454,38 @@ def validate_and_fix_syntax(content: str, path: str) -> str:
                             lines[-1] = last_line.rstrip()[:-1] + '})'
                             fixed_content = '\n'.join(lines)
     
-    # General fix: if we have unmatched opening brackets at the end, close them
-    # But only do this for unmatched items, not if they're intentionally left open (like in JSX fragments)
-    unmatched_open = [item for item in stack if item[0] != '{']  # Allow unmatched braces (could be JSX)
-    
-    # Only fix unmatched parentheses and brackets, be careful with braces
-    for char_type, pos in reversed(stack):
-        if char_type == '(':
-            fixed_content = fixed_content.rstrip() + '\n)'
-        elif char_type == '[':
-            fixed_content = fixed_content.rstrip() + '\n]'
-    
-    # Validate that critical function calls are complete
-    # Check for export default function/const patterns
-    if 'export default' in fixed_content:
-        # Ensure the export statement is complete
-        lines = fixed_content.split('\n')
-        export_line_idx = None
-        for i, line in enumerate(lines):
-            if 'export default' in line and '(' in line:
-                export_line_idx = i
-        
-        if export_line_idx is not None:
-            # Count opening and closing parentheses after export default
-            export_content = '\n'.join(lines[export_line_idx:])
-            open_count = export_content.count('(')
-            close_count = export_content.count(')')
+    # For React/TSX files, skip aggressive fixes - JSX syntax is complex and parentheses
+    # are used in many contexts (arrow functions, JSX expressions, etc.)
+    # Only apply minimal fixes for obvious config files
+    if not is_react_file:
+        # Only for non-React files, check for obvious issues
+        # But be conservative - only fix if it's clearly a function call pattern
+        if path == "package.json":
+            # Don't modify JSON files
+            pass
+        elif 'export default' in fixed_content and ('defineConfig' in fixed_content or 'config' in path.lower()):
+            # Only for config files with export default, check if it's a function call
+            # This is a very specific case (like vite.config.ts)
+            lines = fixed_content.split('\n')
+            export_line_idx = None
+            for i, line in enumerate(lines):
+                if 'export default' in line and ('defineConfig' in line or 'config' in line.lower()):
+                    export_line_idx = i
+                    break
             
-            # If missing closing parens, try to add them at the end
-            if open_count > close_count:
-                missing = open_count - close_count
-                fixed_content = fixed_content.rstrip() + '\n' + ')' * missing
+            if export_line_idx is not None:
+                # Only check if it's clearly a function call that needs closing
+                export_content = '\n'.join(lines[export_line_idx:])
+                # Only fix if it ends with } and has defineConfig
+                if 'defineConfig(' in export_content and export_content.rstrip().endswith('}') and not export_content.rstrip().endswith('})'):
+                    open_count = export_content.count('(')
+                    close_count = export_content.count(')')
+                    if open_count > close_count:
+                        # Very specific fix: only for defineConfig pattern
+                        lines = fixed_content.rstrip().split('\n')
+                        if lines and lines[-1].strip() == '}':
+                            lines[-1] = '})'
+                            fixed_content = '\n'.join(lines)
     
     # Ensure file ends with newline if it originally did
     if content.endswith('\n') and not fixed_content.endswith('\n'):
