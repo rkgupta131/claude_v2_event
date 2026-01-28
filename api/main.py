@@ -40,11 +40,15 @@ async def lifespan(app: FastAPI):
     Path("output").mkdir(exist_ok=True)
     Path("modified_output").mkdir(exist_ok=True)
     
-    # Check for API key
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print(" WARNING: ANTHROPIC_API_KEY not set!")
-    else:
-        print(" API key configured")
+    # Check for API keys (optional - only needed if using that provider)
+    if os.getenv("GOOGLE_API_KEY"):
+        print("✅ Google Gemini API key configured")
+    if os.getenv("ANTHROPIC_API_KEY"):
+        print("✅ Anthropic Claude API key configured")
+    if os.getenv("OPENAI_API_KEY"):
+        print("✅ OpenAI API key configured")
+    if not any([os.getenv("GOOGLE_API_KEY"), os.getenv("ANTHROPIC_API_KEY"), os.getenv("OPENAI_API_KEY")]):
+        print("⚠️  WARNING: No AI provider API keys found! Set GOOGLE_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY")
     
     print(" API ready at http://localhost:8000")
     print("Docs at http://localhost:8000/docs")

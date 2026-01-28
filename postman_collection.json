@@ -2,10 +2,122 @@
 	"info": {
 		"_postman_id": "api-collection-2026",
 		"name": "AI Project Generator API",
-		"description": "Simplified payloads with only: prompt, project_id, model_family, model_name",
+		"description": "Unified API for generating and modifying projects with multiple AI providers. Default: Google Gemini 2.5 Flash. Supports GET and POST methods with SSE streaming.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "Generate - Default (Gemini 2.5 Flash)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				},
+				"description": "Generate a project using default model (Gemini 2.5 Flash). No model specification needed."
+			}
+		},
+		{
+			"name": "Generate - Google Gemini 2.5 Flash",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-2.5-flash\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				},
+				"description": "Explicitly use Google Gemini 2.5 Flash model."
+			}
+		},
+		{
+			"name": "Generate - Google Gemini Pro",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a portfolio website\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-pro\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				},
+				"description": "Use Google Gemini Pro model."
+			}
+		},
+		{
+			"name": "Generate - With Business Details",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"prompt\": \"Create a landing page\",\n  \"business_name\": \"Bean Dreams\",\n  \"website_type\": \"Landing Page\",\n  \"color_scheme\": \"Modern Dark\",\n  \"key_features\": [\"Artisan Coffee\", \"Fresh Pastries\", \"Cozy Atmosphere\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/stream",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"]
+				},
+				"description": "Generate with detailed business information. Uses default Gemini model."
+			}
+		},
 		{
 			"name": "Generate - Anthropic Claude",
 			"request": {
@@ -30,7 +142,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "stream"]
-				}
+				},
+				"description": "Use Anthropic Claude Opus model."
 			}
 		},
 		{
@@ -57,7 +170,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "stream"]
-				}
+				},
+				"description": "Use OpenAI GPT-4 model."
 			}
 		},
 		{
@@ -84,11 +198,46 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "stream"]
-				}
+				},
+				"description": "Use OpenAI GPT-5.2 model."
 			}
 		},
 		{
-			"name": "Modify - Latest Project",
+			"name": "Generate - GET Request",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/stream?prompt=Create a bakery website&model_family=Google&model_name=gemini-2.5-flash",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"],
+					"query": [
+						{
+							"key": "prompt",
+							"value": "Create a bakery website"
+						},
+						{
+							"key": "model_family",
+							"value": "Google"
+						},
+						{
+							"key": "model_name",
+							"value": "gemini-2.5-flash"
+						}
+					]
+				},
+				"description": "Generate using GET request with query parameters."
+			}
+		},
+		{
+			"name": "Modify - Latest Project (Gemini Default)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -103,7 +252,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"prompt\": \"Change hero text to Welcome\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"OpenAI\",\n  \"model_name\": \"gpt-4\"\n}"
+					"raw": "{\n  \"prompt\": \"Change hero text to Welcome\",\n  \"event_type\": \"modify\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8000/api/stream",
@@ -111,7 +260,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "stream"]
-				}
+				},
+				"description": "Modify the latest project using default Gemini model. No project_id needed - uses latest."
 			}
 		},
 		{
@@ -130,7 +280,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"prompt\": \"Add a contact form section\",\n  \"project_id\": \"project_v13_20260108_104713\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"Anthropic\",\n  \"model_name\": \"claude-opus-4-5-20251101\"\n}"
+					"raw": "{\n  \"prompt\": \"Add a contact form section\",\n  \"project_id\": \"project_v13_20260108_104713\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-2.5-flash\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8000/api/stream",
@@ -138,7 +288,46 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "stream"]
-				}
+				},
+				"description": "Modify a specific project by project_id."
+			}
+		},
+		{
+			"name": "Modify - GET Request",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "text/event-stream"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/stream?prompt=Change navbar color to blue&event_type=modify&model_family=Google&model_name=gemini-2.5-flash",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8000",
+					"path": ["api", "stream"],
+					"query": [
+						{
+							"key": "prompt",
+							"value": "Change navbar color to blue"
+						},
+						{
+							"key": "event_type",
+							"value": "modify"
+						},
+						{
+							"key": "model_family",
+							"value": "Google"
+						},
+						{
+							"key": "model_name",
+							"value": "gemini-2.5-flash"
+						}
+					]
+				},
+				"description": "Modify using GET request with query parameters."
 			}
 		},
 		{
@@ -161,7 +350,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "chat"]
-				}
+				},
+				"description": "Simple chat message without history."
 			}
 		},
 		{
@@ -184,7 +374,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "chat"]
-				}
+				},
+				"description": "Chat with conversation history for context."
 			}
 		},
 		{
@@ -207,7 +398,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "classify"]
-				}
+				},
+				"description": "Classify user intent from text input."
 			}
 		},
 		{
@@ -221,7 +413,8 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["health"]
-				}
+				},
+				"description": "Check API health status."
 			}
 		},
 		{
@@ -235,9 +428,9 @@
 					"host": ["localhost"],
 					"port": "8000",
 					"path": ["api", "models"]
-				}
+				},
+				"description": "List all supported AI providers and their default models."
 			}
 		}
 	]
 }
-

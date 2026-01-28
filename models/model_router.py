@@ -101,11 +101,13 @@ class GoogleProvider(AIProvider):
     
     def generate_project(self, prompt: str, emitter: Optional[StreamEventEmitter] = None) -> Dict:
         """Generate a new project using Google Gemini."""
-        raise NotImplementedError("Google Gemini provider not yet implemented")
+        from models.google_client import generate_project_gemini
+        return generate_project_gemini(prompt, self.model_name, self.api_key, emitter)
     
     def generate_patch(self, modification_prompt: str, base_project: dict, emitter: Optional[StreamEventEmitter] = None) -> dict:
         """Generate modifications using Google Gemini."""
-        raise NotImplementedError("Google Gemini provider not yet implemented")
+        from models.google_client import generate_patch_gemini
+        return generate_patch_gemini(modification_prompt, base_project, self.model_name, self.api_key, emitter)
 
 
 # ==========================================================

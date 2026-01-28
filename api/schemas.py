@@ -132,8 +132,8 @@ class UnifiedRequest(BaseModel):
     prompt: str = Field(..., description="User's request or modification prompt", min_length=1)
     project_id: Optional[str] = Field(None, description="Project ID (required for modify event_type)")
     event_type: EventType = Field(EventType.GENERATE, description="Operation type: generate or modify")
-    model_family: ModelFamily = Field(ModelFamily.ANTHROPIC, description="AI provider to use")
-    model_name: str = Field("claude-opus-4-5-20251101", description="Specific model name")
+    model_family: ModelFamily = Field(ModelFamily.GOOGLE, description="AI provider to use")
+    model_name: str = Field("gemini-2.5-flash", description="Specific model name")
     
     # Optional detailed requirements (for generation)
     business_name: Optional[str] = Field(None, description="Business or website name")
@@ -152,8 +152,8 @@ class UnifiedRequest(BaseModel):
                 "prompt": "Create a landing page for a coffee shop",
                 "project_id": None,
                 "event_type": "generate",
-                "model_family": "Anthropic",
-                "model_name": "claude-opus-4-5-20251101",
+                "model_family": "Google",
+                "model_name": "gemini-2.5-flash",
                 "business_name": "Bean Dreams",
                 "website_type": "Landing Page"
             }

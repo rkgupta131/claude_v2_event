@@ -158,7 +158,8 @@ def _make_client():
     _client = Anthropic(api_key=api_key)
     return _client
 
-client = _make_client()
+# Lazy initialization - client is only created when actually needed
+# Don't initialize at import time to avoid requiring ANTHROPIC_API_KEY when using other providers
 
 DESIGN_SYSTEM = """
 You MUST follow this component layout exactly.
@@ -265,7 +266,7 @@ def _call_claude(prompt: str, max_retries: int = 5, track_metrics: bool = True, 
             file_label = f"[{file_name}] " if file_name else ""
             
             # Use streaming to get accurate TTFT
-            with client.messages.stream(
+            with _make_client().messages.stream(
                 model=MODEL,
                 max_tokens=8192,
                 messages=[{"role": "user", "content": prompt}]
@@ -946,7 +947,7 @@ EXAMPLE: If user says "change hero text to Welcome", identify:
         first_token_time = None
         full_response = ""
         
-        with client.messages.stream(
+        with _make_client().messages.stream(
             model="claude-sonnet-4-20250514",  # Use Sonnet 4
             max_tokens=4096,
             temperature=0,
@@ -1138,7 +1139,7 @@ def chat_with_claude(user_message: str, chat_history: list = None) -> str:
     })
     
     try:
-        response = client.messages.create(
+        response = _make_client().messages.create(
             model="claude-sonnet-4-20250514",  # Use Sonnet 4 for chat
             max_tokens=2048,
             temperature=0.7,  # More creative for chat
@@ -1206,7 +1207,7 @@ Respond with ONLY a JSON object:
 }}
 """
         
-        response = client.messages.create(
+        response = _make_client().messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=200,
             temperature=0,
@@ -1269,7 +1270,7 @@ Return ONLY a JSON object with these fields (use null for unknown):
 }}
 """
         
-        response = client.messages.create(
+        response = _make_client().messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=500,
             temperature=0,

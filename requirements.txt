@@ -27,5 +27,5 @@ sse-starlette>=1.6.0
 # streamlit>=1.31.0
 
 # Optional: Google AI (if needed)
-# google-genai>=0.3.0
+google-generativeai>=0.3.0
 
