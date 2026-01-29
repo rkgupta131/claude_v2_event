@@ -2,12 +2,12 @@
 	"info": {
 		"_postman_id": "api-collection-2026",
 		"name": "AI Project Generator API",
-		"description": "Unified API for generating and modifying projects with multiple AI providers. Default: Google Gemini 2.5 Flash. Supports GET and POST methods with SSE streaming.",
+		"description": "Unified API for generating and modifying projects with multiple AI providers. Default: Google Gemini 1.5 Flash. Supports GET and POST methods with SSE streaming.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Generate - Default (Gemini 2.5 Flash)",
+			"name": "Generate - Default (Gemini 1.5 Flash)",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -35,7 +35,7 @@
 			}
 		},
 		{
-			"name": "Generate - Google Gemini 2.5 Flash",
+			"name": "Generate - Google Gemini 1.5 Flash",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -50,7 +50,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-2.5-flash\"\n}"
+					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-1.5-flash\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8000/api/stream",
@@ -116,34 +116,6 @@
 					"path": ["api", "stream"]
 				},
 				"description": "Generate with detailed business information. Uses default Gemini model."
-			}
-		},
-		{
-			"name": "Generate - Anthropic Claude",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					},
-					{
-						"key": "Accept",
-						"value": "text/event-stream"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"prompt\": \"Create a coffee shop landing page\",\n  \"model_family\": \"Anthropic\",\n  \"model_name\": \"claude-opus-4-5-20251101\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:8000/api/stream",
-					"protocol": "http",
-					"host": ["localhost"],
-					"port": "8000",
-					"path": ["api", "stream"]
-				},
-				"description": "Use Anthropic Claude Opus model."
 			}
 		},
 		{
@@ -213,7 +185,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8000/api/stream?prompt=Create a bakery website&model_family=Google&model_name=gemini-2.5-flash",
+					"raw": "http://localhost:8000/api/stream?prompt=Create a bakery website&model_family=Google&model_name=gemini-1.5-flash",
 					"protocol": "http",
 					"host": ["localhost"],
 					"port": "8000",
@@ -229,7 +201,7 @@
 						},
 						{
 							"key": "model_name",
-							"value": "gemini-2.5-flash"
+							"value": "gemini-1.5-flash"
 						}
 					]
 				},
@@ -280,7 +252,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"prompt\": \"Add a contact form section\",\n  \"project_id\": \"project_v13_20260108_104713\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-2.5-flash\"\n}"
+					"raw": "{\n  \"prompt\": \"Add a contact form section\",\n  \"project_id\": \"project_v13_20260108_104713\",\n  \"event_type\": \"modify\",\n  \"model_family\": \"Google\",\n  \"model_name\": \"gemini-1.5-flash\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8000/api/stream",
@@ -303,7 +275,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8000/api/stream?prompt=Change navbar color to blue&event_type=modify&model_family=Google&model_name=gemini-2.5-flash",
+					"raw": "http://localhost:8000/api/stream?prompt=Change navbar color to blue&event_type=modify&model_family=Google&model_name=gemini-1.5-flash",
 					"protocol": "http",
 					"host": ["localhost"],
 					"port": "8000",
@@ -323,7 +295,7 @@
 						},
 						{
 							"key": "model_name",
-							"value": "gemini-2.5-flash"
+							"value": "gemini-1.5-flash"
 						}
 					]
 				},

@@ -19,7 +19,7 @@ from api.schemas import GenerateRequest, ModifyRequest, ErrorResponse
 
 # Import core modules
 from events.stream_events import StreamEventEmitter, create_emitter
-from models.gemini_client_qa import generate_project, generate_patch
+from models.model_router import ModelRouter
 
 router = APIRouter()
 
@@ -183,10 +183,14 @@ async def generate_sse_events(
             emitter = create_emitter(callback=event_callback)
             
             if is_modification and base_project:
-                patch = generate_patch(prompt, base_project, emitter=emitter)
+                # Use model router with Google as default (legacy route)
+                provider = ModelRouter.get_provider("Google", "gemini-1.5-flash")
+                patch = provider.generate_patch(prompt, base_project, emitter=emitter)
                 result_holder["patch"] = patch
             else:
-                project = generate_project(prompt, emitter=emitter)
+                # Use model router with Google as default (legacy route)
+                provider = ModelRouter.get_provider("Google", "gemini-1.5-flash")
+                project = provider.generate_project(prompt, emitter=emitter)
                 result_holder["project"] = project
         except Exception as e:
             result_holder["error"] = str(e)
@@ -309,7 +313,9 @@ async def generate_project_endpoint(request: GenerateRequest):
     """
     try:
         prompt = build_enhanced_prompt(request)
-        project = generate_project(prompt)
+        # Use model router with Google as default (legacy route)
+        provider = ModelRouter.get_provider("Google", "gemini-1.5-flash")
+        project = provider.generate_project(prompt)
         validate_project(project)
         path, saved_data = save_project(project, is_modification=False)
         
@@ -448,7 +454,9 @@ async def modify_project_endpoint(request: ModifyRequest):
         
         # Generate patch
         modification_prompt = f"Modify the existing project: {request.prompt}"
-        patch = generate_patch(modification_prompt, base_project)
+        # Use model router with Google as default (legacy route)
+        provider = ModelRouter.get_provider("Google", "gemini-1.5-flash")
+        patch = provider.generate_patch(modification_prompt, base_project)
         
         # Apply patch
         patched_project, modified_files = apply_patch(base_project, patch)

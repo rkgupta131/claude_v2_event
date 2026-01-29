@@ -30,32 +30,6 @@ class AIProvider(ABC):
 
 
 # ==========================================================
-# ANTHROPIC PROVIDER (Claude)
-# ==========================================================
-
-class AnthropicProvider(AIProvider):
-    """Anthropic Claude AI provider."""
-    
-    def __init__(self, model_name: str):
-        super().__init__(model_name)
-        from models.gemini_client_qa import MODEL
-        
-        # Override the global MODEL in gemini_client_qa
-        import models.gemini_client_qa as claude_module
-        claude_module.MODEL = model_name
-    
-    def generate_project(self, prompt: str, emitter: Optional[StreamEventEmitter] = None) -> Dict:
-        """Generate a new project using Claude."""
-        from models.gemini_client_qa import generate_project
-        return generate_project(prompt, emitter)
-    
-    def generate_patch(self, modification_prompt: str, base_project: dict, emitter: Optional[StreamEventEmitter] = None) -> dict:
-        """Generate modifications using Claude."""
-        from models.gemini_client_qa import generate_patch
-        return generate_patch(modification_prompt, base_project, emitter)
-
-
-# ==========================================================
 # OPENAI PROVIDER (GPT)
 # ==========================================================
 
@@ -91,23 +65,34 @@ class OpenAIProvider(AIProvider):
 # ==========================================================
 
 class GoogleProvider(AIProvider):
-    """Google Gemini provider."""
+    """Google Gemini provider using Vertex AI."""
     
     def __init__(self, model_name: str):
         super().__init__(model_name)
-        self.api_key = os.getenv("GOOGLE_API_KEY")
-        if not self.api_key:
-            raise ValueError("GOOGLE_API_KEY environment variable not set")
+        # Vertex AI credentials
+        self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        
+        if not self.project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
+        
+        if not self.credentials_path:
+            raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set (path to service account JSON file)")
+        
+        # Verify credentials file exists
+        if not os.path.exists(self.credentials_path):
+            raise ValueError(f"Credentials file not found: {self.credentials_path}")
     
     def generate_project(self, prompt: str, emitter: Optional[StreamEventEmitter] = None) -> Dict:
-        """Generate a new project using Google Gemini."""
+        """Generate a new project using Vertex AI Gemini."""
         from models.google_client import generate_project_gemini
-        return generate_project_gemini(prompt, self.model_name, self.api_key, emitter)
+        return generate_project_gemini(prompt, self.model_name, self.project_id, self.location, emitter)
     
     def generate_patch(self, modification_prompt: str, base_project: dict, emitter: Optional[StreamEventEmitter] = None) -> dict:
-        """Generate modifications using Google Gemini."""
+        """Generate modifications using Vertex AI Gemini."""
         from models.google_client import generate_patch_gemini
-        return generate_patch_gemini(modification_prompt, base_project, self.model_name, self.api_key, emitter)
+        return generate_patch_gemini(modification_prompt, base_project, self.model_name, self.project_id, self.location, emitter)
 
 
 # ==========================================================
@@ -141,7 +126,6 @@ class ModelRouter:
     
     # Provider registry
     PROVIDERS = {
-        "Anthropic": AnthropicProvider,
         "OpenAI": OpenAIProvider,
         "Google": GoogleProvider,
         "Mistral": MistralProvider,
@@ -149,9 +133,8 @@ class ModelRouter:
     
     # Default models for each provider
     DEFAULT_MODELS = {
-        "Anthropic": "claude-opus-4-5-20251101",
         "OpenAI": "gpt-4",
-        "Google": "gemini-pro",
+        "Google": "gemini-1.5-flash",
         "Mistral": "mistral-large-latest",
     }
     
@@ -161,8 +144,8 @@ class ModelRouter:
         Get the appropriate AI provider.
         
         Args:
-            model_family: The AI provider family (e.g., "Anthropic", "OpenAI")
-            model_name: Specific model name (e.g., "gpt-4", "claude-opus-4-5-20251101")
+            model_family: The AI provider family (e.g., "OpenAI", "Google")
+            model_name: Specific model name (e.g., "gpt-4", "gemini-1.5-flash")
         
         Returns:
             AIProvider instance
@@ -193,7 +176,6 @@ class ModelRouter:
         
         # Known model patterns (can be expanded)
         valid_patterns = {
-            "Anthropic": ["claude", "opus", "sonnet", "haiku"],
             "OpenAI": ["gpt-3.5", "gpt-4", "gpt-5"],
             "Google": ["gemini"],
             "Mistral": ["mistral", "mixtral"],
@@ -225,7 +207,7 @@ def create_provider(model_family: str, model_name: Optional[str] = None) -> AIPr
     Create an AI provider instance.
     
     Args:
-        model_family: Provider name (Anthropic, OpenAI, Google, Mistral)
+        model_family: Provider name (OpenAI, Google, Mistral)
         model_name: Specific model name (optional)
     
     Returns:

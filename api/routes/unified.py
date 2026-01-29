@@ -52,7 +52,7 @@ async def unified_sse_events(
     Args:
         prompt: User prompt
         event_type: "generate" or "modify"
-        model_family: AI provider (Anthropic, OpenAI, etc.)
+        model_family: AI provider (OpenAI, Google, Mistral)
         model_name: Specific model name
         project_id: Required for modify operations
         **kwargs: Additional parameters (business_name, website_type, etc.)
@@ -223,7 +223,7 @@ async def unified_stream_get(
     project_id: Optional[str] = Query(None, description="Project ID (for modify)"),
     event_type: EventType = Query(EventType.GENERATE, description="Operation: generate or modify"),
     model_family: ModelFamily = Query(ModelFamily.GOOGLE, description="AI provider"),
-    model_name: str = Query("gemini-2.5-flash", description="Specific model name"),
+    model_name: str = Query("gemini-1.5-flash", description="Specific model name"),
     business_name: Optional[str] = Query(None, description="Business name"),
     website_type: Optional[str] = Query(None, description="Website type"),
     color_scheme: Optional[str] = Query(None, description="Color scheme"),
@@ -237,18 +237,18 @@ async def unified_stream_get(
     - `prompt`: What you want to create or modify
     - `project_id`: Project to modify (optional, uses latest if not provided)
     - `event_type`: "generate" (new project) or "modify" (existing project)
-    - `model_family`: AI provider - "Anthropic", "OpenAI", "Google", "Mistral"
-    - `model_name`: Specific model (e.g., "gpt-4", "claude-opus-4-5-20251101")
+    - `model_family`: AI provider - "OpenAI", "Google", "Mistral"
+    - `model_name`: Specific model (e.g., "gpt-4", "gemini-1.5-flash")
     
     **Examples:**
     
     ```javascript
-    // Generate with Claude
+    // Generate with Google Gemini
     const url = '/api/stream?' + new URLSearchParams({
         prompt: 'Create a coffee shop landing page',
         event_type: 'generate',
-        model_family: 'Anthropic',
-        model_name: 'claude-opus-4-5-20251101'
+        model_family: 'Google',
+        model_name: 'gemini-1.5-flash'
     });
     
     // Generate with OpenAI GPT-4
@@ -276,9 +276,8 @@ async def unified_stream_get(
     ```
     
     **Supported Models:**
-    - **Anthropic**: claude-opus-4-5-20251101, claude-sonnet-4-20250514
     - **OpenAI**: gpt-3.5-turbo, gpt-4, gpt-5.2 (when available)
-    - **Google**: gemini-pro (coming soon)
+    - **Google**: gemini-1.5-flash, gemini-1.5-pro, gemini-pro
     - **Mistral**: mistral-large-latest (coming soon)
     """
     # Build enhanced prompt if business details provided
@@ -338,9 +337,8 @@ async def unified_stream_post(request: UnifiedRequest):
     ```
     
     **Model Examples:**
-    - Anthropic: `claude-opus-4-5-20251101`, `claude-sonnet-4-20250514`
     - OpenAI: `gpt-4`, `gpt-5.2`, `gpt-3.5-turbo`
-    - Google: `gemini-pro` (coming soon)
+    - Google: `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-pro`
     - Mistral: `mistral-large-latest` (coming soon)
     
     **Usage:**
@@ -408,14 +406,13 @@ async def list_supported_models():
     ```json
     {
         "providers": {
-            "Anthropic": "claude-opus-4-5-20251101",
             "OpenAI": "gpt-4",
-            "Google": "gemini-pro",
+            "Google": "gemini-1.5-flash",
             "Mistral": "mistral-large-latest"
         },
         "examples": {
-            "Anthropic": ["claude-opus-4-5-20251101", "claude-sonnet-4-20250514"],
-            "OpenAI": ["gpt-4", "gpt-5.2", "gpt-3.5-turbo"]
+            "OpenAI": ["gpt-4", "gpt-5.2", "gpt-3.5-turbo"],
+            "Google": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]
         }
     }
     ```
@@ -427,11 +424,6 @@ async def list_supported_models():
     return {
         "providers": providers,
         "examples": {
-            "Anthropic": [
-                "claude-opus-4-5-20251101",
-                "claude-sonnet-4-20250514",
-                "claude-3-5-sonnet-20241022"
-            ],
             "OpenAI": [
                 "gpt-4",
                 "gpt-5.2",
@@ -439,15 +431,16 @@ async def list_supported_models():
                 "gpt-3.5-turbo"
             ],
             "Google": [
-                "gemini-pro",
-                "gemini-1.5-pro"
+                "gemini-1.5-flash",
+                "gemini-1.5-pro",
+                "gemini-pro"
             ],
             "Mistral": [
                 "mistral-large-latest",
                 "mistral-medium-latest"
             ]
         },
-        "note": "Google and Mistral providers are coming soon. Currently only Anthropic and OpenAI are fully supported."
+        "note": "Google Gemini is fully supported via Vertex AI. OpenAI is fully supported. Mistral is coming soon."
     }
 
 

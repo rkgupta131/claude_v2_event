@@ -41,14 +41,16 @@ async def lifespan(app: FastAPI):
     Path("modified_output").mkdir(exist_ok=True)
     
     # Check for API keys (optional - only needed if using that provider)
-    if os.getenv("GOOGLE_API_KEY"):
-        print("✅ Google Gemini API key configured")
-    if os.getenv("ANTHROPIC_API_KEY"):
-        print("✅ Anthropic Claude API key configured")
+    if os.getenv("GOOGLE_CLOUD_PROJECT") and os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        print("✅ Vertex AI credentials configured")
+        print(f"   Project: {os.getenv('GOOGLE_CLOUD_PROJECT')}")
+        print(f"   Location: {os.getenv('GOOGLE_CLOUD_LOCATION', 'us-central1')}")
     if os.getenv("OPENAI_API_KEY"):
         print("✅ OpenAI API key configured")
-    if not any([os.getenv("GOOGLE_API_KEY"), os.getenv("ANTHROPIC_API_KEY"), os.getenv("OPENAI_API_KEY")]):
-        print("⚠️  WARNING: No AI provider API keys found! Set GOOGLE_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY")
+    if not any([os.getenv("GOOGLE_CLOUD_PROJECT"), os.getenv("OPENAI_API_KEY")]):
+        print("⚠️  WARNING: No AI provider credentials found!")
+        print("   Set GOOGLE_CLOUD_PROJECT + GOOGLE_APPLICATION_CREDENTIALS (Vertex AI)")
+        print("   or OPENAI_API_KEY")
     
     print(" API ready at http://localhost:8000")
     print("Docs at http://localhost:8000/docs")

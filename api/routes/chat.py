@@ -12,7 +12,7 @@ from api.schemas import (
 )
 
 # Import core modules
-from models.gemini_client_qa import chat_with_claude
+from models.google_client import chat_with_gemini
 from intent.classifier import classify_intent
 
 router = APIRouter()
@@ -56,8 +56,8 @@ async def chat_endpoint(request: ChatRequest):
         # Convert history to expected format
         history = request.history or []
         
-        # Call Claude
-        response = chat_with_claude(request.message, history)
+        # Call Google Gemini
+        response = chat_with_gemini(request.message, history)
         
         return ChatResponse(
             message=response,

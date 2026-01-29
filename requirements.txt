@@ -17,7 +17,6 @@ requests>=2.31.0
 httpx>=0.26.0
 
 # AI/LLM Providers
-anthropic>=0.18.0
 openai>=1.10.0
 
 # Async Support
@@ -27,5 +26,6 @@ sse-starlette>=1.6.0
 # streamlit>=1.31.0
 
 # Optional: Google AI (if needed)
-google-generativeai>=0.3.0
+# google-generativeai>=0.3.0  # For Google AI Studio
+google-cloud-aiplatform>=1.38.0  # For Vertex AI
 

@@ -1,15 +1,17 @@
 """
-Google Gemini Client - Similar structure to openai_client but using Google Gemini
+Google Gemini Client - Using Vertex AI API
 """
 
 import json
 import time
+import os
 from typing import Dict, Optional
 
 try:
-    import google.generativeai as genai
+    from vertexai.generative_models import GenerativeModel
+    import vertexai
 except ImportError:
-    raise ImportError("Google Generative AI package not installed. Run: pip install google-generativeai")
+    raise ImportError("Vertex AI package not installed. Run: pip install google-cloud-aiplatform")
 
 # Import event system
 from events.stream_events import StreamEventEmitter, detect_language
@@ -30,14 +32,15 @@ from models.gemini_client_qa import (
 # GOOGLE GEMINI SPECIFIC IMPLEMENTATION
 # ==========================================================
 
-def _call_gemini(model: str, prompt: str, api_key: str, track_metrics: bool = True, file_name: str = None) -> str:
+def _call_gemini(model: str, prompt: str, project_id: str, location: str, track_metrics: bool = True, file_name: str = None) -> str:
     """
-    Call Google Gemini API with streaming support.
+    Call Vertex AI Gemini API with streaming support.
     
     Args:
-        model: Model name (e.g., "gemini-2.5-flash", "gemini-pro")
+        model: Model name (e.g., "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro")
         prompt: User prompt
-        api_key: Google API key
+        project_id: Google Cloud Project ID
+        location: GCP location (e.g., "us-central1")
         track_metrics: Whether to track usage metrics
         file_name: Optional file name for tracking
     
@@ -46,51 +49,161 @@ def _call_gemini(model: str, prompt: str, api_key: str, track_metrics: bool = Tr
     """
     file_label = f"[{file_name}] " if file_name else ""
     
-    # Configure the API
-    genai.configure(api_key=api_key)
+    # Initialize Vertex AI
+    vertexai.init(project=project_id, location=location)
     
     start_time = time.time()
     first_token_time = None
     full_response = ""
     
     try:
-        # Create the model instance
-        gemini_model = genai.GenerativeModel(model)
+        # Create the model instance using Vertex AI
+        print(f"🔄 {file_label}Calling Vertex AI Gemini (model: {model}, project: {project_id}, location: {location})...")
+        gemini_model = GenerativeModel(model)
         
-        # Generate content with streaming
+        # Add generation config
+        generation_config = {
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 8192,
+        }
+        
+        # Make streaming request
+        print(f"📡 {file_label}Making streaming request...")
         response = gemini_model.generate_content(
             prompt,
+            generation_config=generation_config,
             stream=True,
         )
         
+        print(f"📥 {file_label}Receiving response stream...")
+        chunk_count = 0
+        last_chunk_time = time.time()
+        
         for chunk in response:
-            if chunk.text:
+            chunk_count += 1
+            current_time = time.time()
+            
+            # Check for timeout (if no chunk received in 60 seconds)
+            if chunk_count == 1:
+                last_chunk_time = current_time
+            elif current_time - last_chunk_time > 60:
+                raise RuntimeError(f"Streaming timeout: No chunks received for 60 seconds")
+            
+            last_chunk_time = current_time
+            
+            # Handle Vertex AI response format
+            text_content = None
+            # Vertex AI streaming chunks have candidates with content.parts
+            if hasattr(chunk, 'candidates') and chunk.candidates:
+                for candidate in chunk.candidates:
+                    if hasattr(candidate, 'content') and candidate.content:
+                        if hasattr(candidate.content, 'parts'):
+                            text_parts = []
+                            for part in candidate.content.parts:
+                                if hasattr(part, 'text') and part.text:
+                                    text_parts.append(part.text)
+                            if text_parts:
+                                text_content = ''.join(text_parts)
+                                break
+            # Fallback: check for direct text attribute
+            elif hasattr(chunk, 'text') and chunk.text:
+                text_content = chunk.text
+            
+            if text_content:
                 if first_token_time is None:
                     first_token_time = time.time()
                     ttft_ms = (first_token_time - start_time) * 1000
                     print(f"⏱️  {file_label}Time to First Token: {ttft_ms:.2f} ms")
                 
-                full_response += chunk.text
+                full_response += text_content
+                # Print progress for long responses
+                if chunk_count % 10 == 0:
+                    print(f"📊 {file_label}Received {chunk_count} chunks, {len(full_response)} chars...")
+        
+        if chunk_count == 0:
+            # Fallback to non-streaming if streaming fails
+            print(f"⚠️  {file_label}No streaming chunks received, trying non-streaming mode...")
+            try:
+                response_non_stream = gemini_model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                )
+                # Handle Vertex AI response format
+                if hasattr(response_non_stream, 'text') and response_non_stream.text:
+                    full_response = response_non_stream.text
+                    print(f"✅ {file_label}Received non-streaming response ({len(full_response)} chars)")
+                elif hasattr(response_non_stream, 'candidates') and response_non_stream.candidates:
+                    # Vertex AI format
+                    for candidate in response_non_stream.candidates:
+                        if hasattr(candidate, 'content') and candidate.content:
+                            if hasattr(candidate.content, 'parts'):
+                                text_parts = []
+                                for part in candidate.content.parts:
+                                    if hasattr(part, 'text') and part.text:
+                                        text_parts.append(part.text)
+                                if text_parts:
+                                    full_response = ''.join(text_parts)
+                                    print(f"✅ {file_label}Received non-streaming response ({len(full_response)} chars)")
+                                    break
+                if not full_response:
+                    raise RuntimeError("No response received from Vertex AI (streaming and non-streaming both failed)")
+            except Exception as fallback_error:
+                raise RuntimeError(f"Both streaming and non-streaming failed. Last error: {str(fallback_error)}")
+        
+        if not full_response:
+            raise RuntimeError("Empty response received from Gemini API")
         
         end_time = time.time()
         total_ms = (end_time - start_time) * 1000
         
         # Note: Token usage info is available in response.usage_metadata if needed
-        print(f"⏱️  {file_label}Total Time: {total_ms/1000:.2f}s")
+        print(f"⏱️  {file_label}Total Time: {total_ms/1000:.2f}s ({chunk_count} chunks)")
         
         return full_response
         
     except Exception as e:
-        raise RuntimeError(f"Google Gemini API error: {str(e)}")
+        error_msg = str(e)
+        error_lower = error_msg.lower()
+        
+        # Provide specific error messages for common issues
+        if "permission" in error_lower or "403" in error_msg or "401" in error_msg:
+            raise RuntimeError(
+                f"❌ Vertex AI Permission Denied.\n"
+                f"   Please check your GOOGLE_APPLICATION_CREDENTIALS and GOOGLE_CLOUD_PROJECT in .env file.\n"
+                f"   Error details: {error_msg}"
+            )
+        elif "model" in error_lower and ("not found" in error_lower or "invalid" in error_lower):
+            raise RuntimeError(
+                f"❌ Invalid model name: {model}\n"
+                f"   Valid models: gemini-1.5-flash, gemini-1.5-pro, gemini-pro\n"
+                f"   Error details: {error_msg}"
+            )
+        elif "quota" in error_lower or "429" in error_msg:
+            raise RuntimeError(
+                f"❌ API Quota Exceeded.\n"
+                f"   Please check your Google Cloud quota limits.\n"
+                f"   Error details: {error_msg}"
+            )
+        else:
+            raise RuntimeError(
+                f"❌ Vertex AI Gemini API error: {error_msg}\n"
+                f"   Model: {model}\n"
+                f"   Project: {project_id}\n"
+                f"   Location: {location}\n"
+                f"   Check your Vertex AI credentials and model name."
+            )
 
 
-def generate_file_gemini(model: str, api_key: str, path: str, user_prompt: str) -> str:
+def generate_file_gemini(model: str, project_id: str, location: str, path: str, user_prompt: str) -> str:
     """
-    Generate a single file using Google Gemini.
+    Generate a single file using Vertex AI Gemini.
     
     Args:
         model: Model name
-        api_key: Google API key
+        project_id: Google Cloud Project ID
+        location: GCP location (e.g., "us-central1")
         path: File path to generate
         user_prompt: User's request
     
@@ -195,7 +308,7 @@ The export statement MUST end with "}})" not just "}}".
 Invalid syntax will cause build failures.
 """
 
-    raw = _call_gemini(model, prompt, api_key, file_name=path)
+    raw = _call_gemini(model, prompt, project_id, location, file_name=path)
     data = extract_json(raw)
     content = data["content"]
     
@@ -238,14 +351,15 @@ Invalid syntax will cause build failures.
     return content
 
 
-def generate_project_gemini(user_prompt: str, model: str, api_key: str, emitter: Optional[StreamEventEmitter] = None) -> Dict:
+def generate_project_gemini(user_prompt: str, model: str, project_id: str, location: str, emitter: Optional[StreamEventEmitter] = None) -> Dict:
     """
-    Generate a complete project using Google Gemini.
+    Generate a complete project using Vertex AI Gemini.
     
     Args:
         user_prompt: User's request
         model: Gemini model name
-        api_key: Google API key
+        project_id: Google Cloud Project ID
+        location: GCP location (e.g., "us-central1")
         emitter: Optional event emitter
     
     Returns:
@@ -317,7 +431,7 @@ def generate_project_gemini(user_prompt: str, model: str, api_key: str, emitter:
         print(f"\n📄 [{idx+1}/{total_files}] Generating: {path}")
         
         file_start = time.time()
-        content = generate_file_gemini(model, api_key, path, user_prompt)
+        content = generate_file_gemini(model, project_id, location, path, user_prompt)
         project["project"]["files"][path] = {"content": content}
         
         file_duration = int((time.time() - file_start) * 1000)
@@ -355,15 +469,16 @@ def generate_project_gemini(user_prompt: str, model: str, api_key: str, emitter:
     return project
 
 
-def generate_patch_gemini(modification_prompt: str, base_project: dict, model: str, api_key: str, emitter: Optional[StreamEventEmitter] = None) -> dict:
+def generate_patch_gemini(modification_prompt: str, base_project: dict, model: str, project_id: str, location: str, emitter: Optional[StreamEventEmitter] = None) -> dict:
     """
-    Generate modifications using Google Gemini.
+    Generate modifications using Vertex AI Gemini.
     
     Args:
         modification_prompt: Modification request
         base_project: Existing project
         model: Gemini model name
-        api_key: Google API key
+        project_id: Google Cloud Project ID
+        location: GCP location (e.g., "us-central1")
         emitter: Optional event emitter
     
     Returns:
@@ -424,7 +539,7 @@ RESPONSE FORMAT (JSON only, no markdown):
         emitter.chat_message("📋 Identifying changes...")
     
     start_time = time.time()
-    response_text = _call_gemini(model, enhanced_prompt, api_key)
+    response_text = _call_gemini(model, enhanced_prompt, project_id, location)
     total_ms = (time.time() - start_time) * 1000
     
     print(f"⏱️  Modification Time: {total_ms/1000:.2f}s")
@@ -474,4 +589,93 @@ RESPONSE FORMAT (JSON only, no markdown):
         emitter.stream_complete()
     
     return patch
+
+
+# ==========================================================
+# CHAT FUNCTION
+# ==========================================================
+
+def chat_with_gemini(user_message: str, chat_history: list = None, model: str = "gemini-1.5-flash", project_id: str = None, location: str = "us-central1") -> str:
+    """
+    Chat with Google Gemini for general conversation.
+    
+    Args:
+        user_message: The user's message
+        chat_history: Optional list of previous messages [{"role": "user/assistant", "content": "..."}]
+        model: Model name (default: "gemini-1.5-flash")
+        project_id: Google Cloud Project ID (if None, uses env var)
+        location: GCP location (default: "us-central1")
+    
+    Returns:
+        str: Gemini's response
+    """
+    if project_id is None:
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
+    
+    # Initialize Vertex AI
+    vertexai.init(project=project_id, location=location)
+    
+    # Build conversation history
+    history = []
+    
+    # Add previous messages if provided (limit to last 10 for context)
+    if chat_history:
+        for msg in chat_history[-10:]:
+            role = "user" if msg.get("role") == "user" else "model"
+            history.append({
+                "role": role,
+                "parts": [msg.get("content", "")]
+            })
+    
+    # Add current message
+    history.append({
+        "role": "user",
+        "parts": [user_message]
+    })
+    
+    try:
+        gemini_model = GenerativeModel(model)
+        
+        # System instruction
+        system_instruction = """You are a helpful AI assistant. You can:
+- Answer general questions
+- Provide explanations and help with various topics
+- Have casual conversations
+- Help users understand concepts
+
+Be friendly, concise, and helpful. If asked about building webpages, 
+guide the user to use the build mode or rephrase their request clearly."""
+        
+        # Generate response
+        response = gemini_model.generate_content(
+            history,
+            generation_config={
+                "temperature": 0.7,  # More creative for chat
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 2048,
+            },
+            system_instruction=system_instruction,
+        )
+        
+        # Extract text from response
+        if hasattr(response, 'text') and response.text:
+            return response.text.strip()
+        elif hasattr(response, 'candidates') and response.candidates:
+            for candidate in response.candidates:
+                if hasattr(candidate, 'content') and candidate.content:
+                    if hasattr(candidate.content, 'parts'):
+                        text_parts = []
+                        for part in candidate.content.parts:
+                            if hasattr(part, 'text') and part.text:
+                                text_parts.append(part.text)
+                        if text_parts:
+                            return ''.join(text_parts).strip()
+        
+        raise RuntimeError("No response text received from Gemini")
+        
+    except Exception as e:
+        raise RuntimeError(f"Failed to chat with Gemini: {str(e)}")
 

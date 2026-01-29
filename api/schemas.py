@@ -115,7 +115,6 @@ class ClassifyRequest(BaseModel):
 
 class ModelFamily(str, Enum):
     """Supported AI model families."""
-    ANTHROPIC = "Anthropic"
     OPENAI = "OpenAI"
     GOOGLE = "Google"
     MISTRAL = "Mistral"
@@ -133,7 +132,7 @@ class UnifiedRequest(BaseModel):
     project_id: Optional[str] = Field(None, description="Project ID (required for modify event_type)")
     event_type: EventType = Field(EventType.GENERATE, description="Operation type: generate or modify")
     model_family: ModelFamily = Field(ModelFamily.GOOGLE, description="AI provider to use")
-    model_name: str = Field("gemini-2.5-flash", description="Specific model name")
+    model_name: str = Field("gemini-1.5-flash", description="Specific model name")
     
     # Optional detailed requirements (for generation)
     business_name: Optional[str] = Field(None, description="Business or website name")
@@ -153,7 +152,7 @@ class UnifiedRequest(BaseModel):
                 "project_id": None,
                 "event_type": "generate",
                 "model_family": "Google",
-                "model_name": "gemini-2.5-flash",
+                "model_name": "gemini-1.5-flash",
                 "business_name": "Bean Dreams",
                 "website_type": "Landing Page"
             }
